@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GX Web Studio - Code · Edit · Preview · Export</title>
+    <!-- Tailwind CSS CDN for Premium Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- JSZip Library for Reliable ZIP Extraction & Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0b0f19',
+                            800: '#111827',
+                            700: '#1f2937',
+                            600: '#374151',
+                        },
+                        accent: {
+                            cyan: '#00f0ff',
+                            blue: '#3b82f6',
+                            violet: '#8b5cf6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0b0f19; color: #f3f4f6; font-family: system-ui, -apple-system, sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #111827; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-dark-800 border-b border-dark-700 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('home')">
+            <div class="bg-gradient-to-r from-cyan-400 to-blue-600 p-2 rounded-xl text-dark-900 font-black shadow-lg shadow-blue-500/20 flex items-center justify-center">
+                <i data-lucide="code" class="w-6 h-6 stroke-[2.5]"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-cyan-200 to-cyan-400 bg-clip-text text-transparent">GX Web Studio</h1>
+                <p class="text-xs text-gray-400 hidden sm:block">Code · Edit · Preview · Export</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <button onclick="triggerImportHtml()" class="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm">
+                <i data-lucide="file-code" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Import HTML</span>
+            </button>
+            <button onclick="triggerImportZip()" class="flex items-center space-x-1.5 bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm">
+                <i data-lucide="folder-archive" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Import ZIP</span>
+            </button>
+            <button onclick="exportProjectZip()" id="exportBtn" class="hidden flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Export ZIP</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hidden File Inputs -->
+    <input type="file" id="htmlFileInput" accept=".html,.htm" class="hidden" onchange="handleHtmlImport(event)">
+    <input type="file" id="zipFileInput" accept=".zip" class="hidden" onchange="handleZipImport(event)">
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col relative pb-16 md:pb-0">
+
+        <!-- 1. HOME DASHBOARD VIEW -->
+        <div id="view-home" class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8">
+            <!-- Hero Banner -->
+            <div class="bg-gradient-to-r from-dark-800 to-dark-700 border border-dark-600/50 rounded-2xl p-6 md:p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="space-y-3 text-center md:text-left">
+                    <span class="bg-cyan-500/10 text-cyan-400 text-xs font-semibold px-3 py-1 rounded-full border border-cyan-500/20">मोबाइल के लिए नंबर 1 वेब डेवलपमेंट टूल</span>
+                    <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight">वेबसाइट बनाएं, एडिट करें और प्रीव्यू देखें!</h2>
+                    <p class="text-gray-400 text-sm md:text-base max-w-xl">GX Web Studio के साथ आप किसी भी HTML या ZIP वेबसाइट प्रोजेक्ट को आसानी से इम्पोर्ट कर सकते हैं, कोड एडिट कर सकते हैं और लाइव प्रीव्यू देख सकते हैं।</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    <button onclick="triggerImportHtml()" class="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white font-medium px-5 py-3 rounded-xl transition shadow-lg shadow-blue-600/30">
+                        <i data-lucide="file-code" class="w-5 h-5"></i>
+                        <span>Import HTML</span>
+                    </button>
+                    <button onclick="triggerImportZip()" class="flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-500 text-white font-medium px-5 py-3 rounded-xl transition shadow-lg shadow-purple-600/30">
+                        <i data-lucide="folder-archive" class="w-5 h-5"></i>
+                        <span>Import ZIP</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Projects & Features Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Recent Projects -->
+                <div class="lg:col-span-2 bg-dark-800 border border-dark-700 rounded-2xl p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-bold flex items-center space-x-2">
+                            <i data-lucide="folder-git-2" class="w-5 h-5 text-cyan-400"></i>
+                            <span>Recent Projects</span>
+                        </h3>
+                        <span id="projectCount" class="text-xs bg-dark-700 px-2.5 py-1 rounded-full text-gray-400">0 Projects</span>
+                    </div>
+                    <div id="projectsList" class="space-y-3">
+                        <!-- Populated dynamically -->
+                        <div class="text-center py-12 text-gray-500 border border-dashed border-dark-600 rounded-xl">
+                            <i data-lucide="folder-open" class="w-12 h-12 mx-auto mb-2 opacity-40"></i>
+                            <p class="text-sm">कोई प्रोजेक्ट इम्पोर्ट नहीं किया गया है।</p>
+                            <p class="text-xs text-gray-600 mt-1">शुरू करने के लिए ऊपर दिए गए बटन से HTML या ZIP फाइल चुनें।</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Quick Card -->
+                <div class="bg-dark-800 border border-dark-700 rounded-2xl p-6 space-y-4">
+                    <h3 class="text-lg font-bold flex items-center space-x-2">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i>
+                        <span>मुख्य फीचर्स (Key Features)</span>
+                    </h3>
+                    <ul class="space-y-3 text-sm text-gray-300">
+                        <li class="flex items-start space-x-3">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-cyan-400 shrink-0 mt-0.5"></i>
+                            <span>HTML, CSS, JS एडिटिंग और सिंटैक्स हाइलाइटिंग।</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-cyan-400 shrink-0 mt-0.5"></i>
+                            <span>रियल-टाइम लाइव प्रीव्यू (Desktop & Mobile view)।</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-cyan-400 shrink-0 mt-0.5"></i>
+                            <span>Nested ZIP फोल्डर सपोर्ट (assets/, css/, js/)।</span>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-cyan-400 shrink-0 mt-0.5"></i>
+                            <span>100% मोबाइल फ्रेंडली और ऑफलाइन काम करता है।</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. WORKSPACE VIEW (Files, Editor, Preview) -->
+        <div id="view-workspace" class="hidden flex-1 flex flex-col md:flex-row h-[calc(100vh-57px)] overflow-hidden">
+            
+            <!-- Sidebar / File Explorer -->
+            <div id="panel-files" class="w-full md:w-72 bg-dark-800 border-r border-dark-700 flex flex-col h-full">
+                <div class="p-3 border-b border-dark-700 flex items-center justify-between">
+                    <div class="flex items-center space-x-2 truncate">
+                        <i data-lucide="folder" class="w-4 h-4 text-cyan-400"></i>
+                        <span id="currentProjectName" class="text-sm font-semibold truncate">Project</span>
+                    </div>
+                    <button onclick="switchView('home')" class="text-xs bg-dark-700 hover:bg-dark-600 px-2 py-1 rounded text-gray-300">डैशबोर्ड</button>
+                </div>
+                <div class="p-2 border-b border-dark-700/50 flex items-center justify-between text-xs text-gray-400">
+                    <span>PROJECT FILES</span>
+                    <button onclick="exportProjectZip()" class="hover:text-white flex items-center space-x-1">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>ZIP</span>
+                    </button>
+                </div>
+                <div id="fileExplorerList" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                    <!-- File tree populated here -->
+                </div>
+            </div>
+
+            <!-- Code Editor Panel -->
+            <div id="panel-editor" class="hidden md:flex flex-1 flex-col h-full bg-dark-900 border-r border-dark-700">
+                <div class="bg-dark-800 px-4 py-2 border-b border-dark-700 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="file-code" class="w-4 h-4 text-blue-400"></i>
+                        <span id="activeFilename" class="text-xs font-medium text-gray-200">No file selected</span>
+                        <span id="unsavedIndicator" class="text-amber-400 hidden text-xs">● अनसेव्ड</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="saveActiveFile()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs font-medium flex items-center space-x-1 shadow-sm">
+                            <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 relative flex">
+                    <!-- Line numbers -->
+                    <div id="lineNumbers" class="w-12 bg-dark-800/50 text-gray-600 font-mono text-xs py-3 select-none text-right pr-3 overflow-hidden leading-relaxed">1</div>
+                    <!-- Textarea Editor -->
+                    <textarea id="codeEditorArea" oninput="handleCodeInput()" onscroll="syncScroll()" class="flex-1 bg-transparent text-gray-200 font-mono text-xs p-3 resize-none focus:outline-none leading-relaxed custom-scrollbar" placeholder="फाइल चुनने के लिए बाईं ओर फ़ाइल पर क्लिक करें..."></textarea>
+                </div>
+                <!-- Editor Status Bar -->
+                <div class="bg-dark-800 border-t border-dark-700 px-3 py-1.5 text-[11px] text-gray-400 flex items-center justify-between">
+                    <span id="fileTypeBadge">UTF-8 · HTML</span>
+                    <span id="cursorPosition">Ln 1, Col 1</span>
+                </div>
+            </div>
+
+            <!-- Live Preview Panel -->
+            <div id="panel-preview" class="hidden md:flex w-full md:w-[45%] flex-col h-full bg-white">
+                <div class="bg-dark-800 border-b border-dark-700 px-4 py-2 flex items-center justify-between text-gray-200">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="eye" class="w-4 h-4 text-emerald-400"></i>
+                        <span class="text-xs font-medium">Live Preview</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="setPreviewDevice('mobile')" id="btnMobilePreview" class="p-1.5 hover:bg-dark-700 rounded text-gray-400 hover:text-white" title="Mobile View"><i data-lucide="smartphone" class="w-4 h-4"></i></button>
+                        <button onclick="setPreviewDevice('desktop')" id="btnDesktopPreview" class="p-1.5 bg-dark-700 rounded text-white" title="Desktop View"><i data-lucide="monitor" class="w-4 h-4"></i></button>
+                        <button onclick="refreshPreview()" class="p-1.5 hover:bg-dark-700 rounded text-gray-400 hover:text-white" title="Refresh Preview"><i data-lucide="rotate-cw" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+                <div class="flex-1 bg-gray-900 flex items-center justify-center p-0 md:p-4 overflow-hidden">
+                    <div id="previewContainer" class="w-full h-full bg-white rounded-none md:rounded-lg shadow-2xl transition-all duration-300 overflow-hidden flex">
+                        <iframe id="previewIframe" class="w-full h-full border-0"></iframe>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar (Android Optimized) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-dark-700 flex justify-around py-2 z-50">
+        <button onclick="switchMobileTab('files')" id="mobTabFiles" class="flex flex-col items-center text-cyan-400 space-y-0.5">
+            <i data-lucide="folder" class="w-5 h-5"></i>
+            <span class="text-[10px]">Files</span>
+        </button>
+        <button onclick="switchMobileTab('editor')" id="mobTabEditor" class="flex flex-col items-center text-gray-400 space-y-0.5">
+            <i data-lucide="code-2" class="w-5 h-5"></i>
+            <span class="text-[10px]">Editor</span>
+        </button>
+        <button onclick="switchMobileTab('preview')" id="mobTabPreview" class="flex flex-col items-center text-gray-400 space-y-0.5">
+            <i data-lucide="eye" class="w-5 h-5"></i>
+            <span class="text-[10px]">Preview</span>
+        </button>
+    </nav>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Application State
+        let projects = JSON.parse(localStorage.getItem('gx_projects') || '[]');
+        let activeProject = null;
+        let activeFilepath = null;
+        let isUnsaved = false;
+
+        // Initialize App on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            renderProjectsList();
+            if (projects.length > 0) {
+                // Load last active or first project if desired
+            }
+        });
+
+        // View Router ('home' or 'workspace')
+        function switchView(viewName) {
+            const homeView = document.getElementById('view-home');
+            const workspaceView = document.getElementById('view-workspace');
+            const exportBtn = document.getElementById('exportBtn');
+
+            if (viewName === 'home') {
+                homeView.classList.remove('hidden');
+                workspaceView.classList.add('hidden');
+                exportBtn.classList.add('hidden');
+                renderProjectsList();
+            } else {
+                homeView.classList.add('hidden');
+                workspaceView.classList.remove('hidden');
+                exportBtn.classList.remove('hidden');
+                renderFileExplorer();
+                if (activeFilepath) {
+                    openFile(activeFilepath);
+                }
+            }
+        }
+
+        // Trigger Import Dialogs
+        function triggerImportHtml() {
+            document.getElementById('htmlFileInput').click();
+        }
+        function triggerImportZip() {
+            document.getElementById('zipFileInput').click();
+        }
+
+        // Handle HTML Import
+        async function handleHtmlImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                const projectName = file.name.replace(/\.[^/.]+$/, "");
+                
+                const newProject = {
+                    id: 'proj_' + Date.now(),
+                    name: projectName,
+                    files: {
+                        [file.name]: text
+                    },
+                    entryPoint: file.name,
+                    createdAt: new Date().toISOString()
+                };
+
+                projects.unshift(newProject);
+                saveProjectsToStorage();
+                
+                activeProject = newProject;
+                activeFilepath = file.name;
+                
+                switchView('workspace');
+                openFile(activeFilepath);
+                refreshPreview();
+            } catch (err) {
+                alert('HTML फाइल इम्पोर्ट करने में त्रुटि: ' + err.message);
+            } finally {
+                event.target.value = '';
+            }
+        }
+
+        // Handle ZIP Import
+        async function handleZipImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            try {
+                const zip = new JSZip();
+                const zipContent = await zip.loadAsync(file);
+                
+                const projectFiles = {};
+                let entryPoint = null;
+                let htmlFiles = [];
+
+                for (let filename of Object.keys(zipContent.files)) {
+                    const zipEntry = zipContent.files[filename];
+                    if (zipEntry.dir) continue;
+                    
+                    // Skip hidden files or mac metadata
+                    if (filename.startsWith('__MACOSX') || filename.includes('/.')) continue;
+
+                    if (filename.endsWith('.html') || filename.endsWith('.htm')) {
+                        htmlFiles.push(filename);
+                    }
+
+                    // Read as text for code files, or binary for assets
+                    if (isTextFile(filename)) {
+                        projectFiles[filename] = await zipEntry.async('text');
+                    } else {
+                        const blob = await zipEntry.async('blob');
+                        projectFiles[filename] = await blobToBase64(blob);
+                    }
+                }
+
+                if (htmlFiles.length === 0) {
+                    alert('इस ZIP फ़ाइल में कोई भी HTML पेज नहीं मिला। कृपया सही वेबसाइट ZIP फ़ाइल चुनें।');
+                    return;
+                }
+
+                // Determine best entry point (prioritize root index.html or first html)
+                entryPoint = htmlFiles.find(f => f.toLowerCase().endsWith('index.html')) || htmlFiles[0];
+
+                const projectName = file.name.replace(/\.[^/.]+$/, "");
+                const newProject = {
+                    id: 'proj_' + Date.now(),
+                    name: projectName,
+                    files: projectFiles,
+                    entryPoint: entryPoint,
+                    createdAt: new Date().toISOString()
+                };
+
+                projects.unshift(newProject);
+                saveProjectsToStorage();
+
+                activeProject = newProject;
+                activeFilepath = entryPoint;
+
+                switchView('workspace');
+                openFile(activeFilepath);
+                refreshPreview();
+            } catch (err) {
+                alert('ZIP फ़ाइल एक्सट्रैक्ट करने में त्रुटि: ' + err.message);
+            } finally {
+                event.target.value = '';
+            }
+        }
+
+        // Helper: Check if file is text
+        function isTextFile(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            return ['html', 'htm', 'css', 'js', 'json', 'xml', 'txt', 'md', 'svg'].includes(ext);
+        }
+
+        // Helper: Blob to Base64 for binary assets
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // Save Projects to LocalStorage
+        function saveProjectsToStorage() {
+            localStorage.setItem('gx_projects', JSON.stringify(projects));
+        }
+
+        // Render Dashboard Projects List
+        function renderProjectsList() {
+            const container = document.getElementById('projectsList');
+            const countBadge = document.getElementById('projectCount');
+            countBadge.innerText = `${projects.length} Projects`;
+
+            if (projects.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500 border border-dashed border-dark-600 rounded-xl">
+                        <i data-lucide="folder-open" class="w-12 h-12 mx-auto mb-2 opacity-40"></i>
+                        <p class="text-sm">कोई प्रोजेक्ट इम्पोर्ट नहीं किया गया है।</p>
+                        <p class="text-xs text-gray-600 mt-1">शुरू करने के लिए ऊपर दिए गए बटन से HTML या ZIP फाइल चुनें।</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = projects.map(proj => `
+                <div onclick="openProject('${proj.id}')" class="bg-dark-700/50 hover:bg-dark-700 border border-dark-600 rounded-xl p-4 flex items-center justify-between cursor-pointer transition group">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-blue-500/10 text-blue-400 p-2.5 rounded-lg group-hover:bg-blue-500 group-hover:text-white transition">
+                            <i data-lucide="globe" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-sm text-white">${escapeHtml(proj.name)}</h4>
+                            <p class="text-xs text-gray-400">Files: ${Object.keys(proj.files).length} · Created: ${new Date(proj.createdAt).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="event.stopPropagation(); deleteProject('${proj.id}')" class="p-2 text-gray-500 hover:text-red-400 rounded-lg" title="Delete Project">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition"></i>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Open Project
+        function openProject(projectId) {
+            const proj = projects.find(p => p.id === projectId);
+            if (!proj) return;
+            activeProject = proj;
+            activeFilepath = proj.entryPoint || Object.keys(proj.files)[0];
+            switchView('workspace');
+            openFile(activeFilepath);
+            refreshPreview();
+        }
+
+        // Delete Project
+        function deleteProject(projectId) {
+            if (!confirm('क्या आप वाकई इस प्रोजेक्ट को डिलीट करना चाहते हैं?')) return;
+            projects = projects.filter(p => p.id !== projectId);
+            saveProjectsToStorage();
+            renderProjectsList();
+        }
+
+        // Render File Explorer
+        function renderFileExplorer() {
+            if (!activeProject) return;
+            document.getElementById('currentProjectName').innerText = activeProject.name;
+            const container = document.getElementById('fileExplorerList');
+            
+            const filenames = Object.keys(activeProject.files).sort();
+            container.innerHTML = filenames.map(filename => {
+                const isActive = filename === activeFilepath;
+                const icon = filename.endsWith('.html') ? 'file-code' : filename.endsWith('.css') ? 'file-text' : filename.endsWith('.js') ? 'file-type' : 'file';
+                return `
+                    <div onclick="openFile('${filename}')" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-xs transition ${isActive ? 'bg-blue-600 text-white font-medium' : 'text-gray-300 hover:bg-dark-700'}">
+                        <div class="flex items-center space-x-2 truncate">
+                            <i data-lucide="${icon}" class="w-4 h-4 shrink-0"></i>
+                            <span class="truncate">${filename}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // Open File in Editor
+        function openFile(filename) {
+            if (!activeProject || !activeProject.files[filename]) return;
+            if (isUnsaved && activeFilepath && activeFilepath !== filename) {
+                if (!confirm('आपके पास अनसेव्ड बदलाव हैं। क्या आप बिना सेव किए दूसरी फाइल खोलना चाहते हैं?')) return;
+            }
+            activeFilepath = filename;
+            const content = activeProject.files[filename];
+            const isText = isTextFile(filename);
+
+            const editorArea = document.getElementById('codeEditorArea');
+            const activeFilenameEl = document.getElementById('activeFilename');
+            const fileTypeBadge = document.getElementById('fileTypeBadge');
+
+            activeFilenameEl.innerText = filename;
+            fileTypeBadge.innerText = `UTF-8 · ${filename.split('.').pop().toUpperCase()}`;
+
+            if (isText) {
+                editorArea.value = content;
+                editorArea.disabled = false;
+                editorArea.classList.remove('opacity-50');
+            } else {
+                editorArea.value = '[Binary File - Preview/Edit not supported in text editor]';
+                editorArea.disabled = true;
+                editorArea.classList.add('opacity-50');
+            }
+
+            isUnsaved = false;
+            document.getElementById('unsavedIndicator').classList.add('hidden');
+            updateLineNumbers();
+            renderFileExplorer();
+        }
+
+        // Handle Code Input
+        function handleCodeInput() {
+            if (!activeProject || !activeFilepath) return;
+            isUnsaved = true;
+            document.getElementById('unsavedIndicator').classList.remove('hidden');
+            activeProject.files[activeFilepath] = document.getElementById('codeEditorArea').value;
+            updateLineNumbers();
+        }
+
+        // Save Active File
+        function saveActiveFile() {
+            if (!activeProject) return;
+            saveProjectsToStorage();
+            isUnsaved = false;
+            document.getElementById('unsavedIndicator').classList.add('hidden');
+            refreshPreview();
+            alert('फाइल सफलतापूर्वक सेव हो गई!');
+        }
+
+        // Update Line Numbers & Cursor Position
+        function updateLineNumbers() {
+            const editor = document.getElementById('codeEditorArea');
+            const lineNumbers = document.getElementById('lineNumbers');
+            const lines = editor.value.split('\n').length;
+            let html = '';
+            for (let i = 1; i <= lines; i++) {
+                html += i + '<br>';
+            }
+            lineNumbers.innerHTML = html;
+
+            // Update cursor position
+            const pos = editor.selectionStart;
+            const textBefore = editor.value.substring(0, pos);
+            const line = textBefore.split('\n').length;
+            const col = pos - textBefore.lastIndexOf('\n');
+            document.getElementById('cursorPosition').innerText = `Ln ${line}, Col ${col}`;
+        }
+
+        function syncScroll() {
+            const editor = document.getElementById('codeEditorArea');
+            const lineNumbers = document.getElementById('lineNumbers');
+            lineNumbers.scrollTop = editor.scrollTop;
+        }
+
+        // Refresh Live Preview with Local Asset Resolution
+        function refreshPreview() {
+            if (!activeProject) return;
+            const iframe = document.getElementById('previewIframe');
+            let htmlContent = activeProject.files[activeProject.entryPoint || Object.keys(activeProject.files).find(f => f.endsWith('.html'))];
+
+            if (!htmlContent) {
+                iframe.srcdoc = '<h2 style="font-family:sans-serif;text-align:center;padding:50px;color:#666;">कोई HTML एंट्री पॉइंट नहीं मिला।</h2>';
+                return;
+            }
+
+            // Replace relative asset references with Blob URLs so CSS/JS/images render correctly
+            for (let filename of Object.keys(activeProject.files)) {
+                if (filename === activeProject.entryPoint) continue;
+                const fileData = activeProject.files[filename];
+                const isBinary = !isTextFile(filename);
+                let assetUrl = '';
+
+                if (isBinary) {
+                    assetUrl = fileData; // Already base64 data url
+                } else {
+                    const mime = filename.endsWith('.css') ? 'text/css' : filename.endsWith('.js') ? 'application/javascript' : 'text/plain';
+                    const blob = new Blob([fileData], { type: mime });
+                    assetUrl = URL.createObjectURL(blob);
+                }
+
+                // Replace occurrences in HTML content
+                const regex = new RegExp(`(src|href)=["']([^"']*?${escapeRegExp(filename)})["']`, 'g');
+                htmlContent = htmlContent.replace(regex, `$1="${assetUrl}"`);
+            }
+
+            const mainBlob = new Blob([htmlContent], { type: 'text/html' });
+            iframe.src = URL.createObjectURL(mainBlob);
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Preview Device Toggles
+        function setPreviewDevice(mode) {
+            const container = document.getElementById('previewContainer');
+            const btnMobile = document.getElementById('btnMobilePreview');
+            const btnDesktop = document.getElementById('btnDesktopPreview');
+
+            if (mode === 'mobile') {
+                container.style.maxWidth = '375px';
+                container.style.height = '667px';
+                container.classList.add('border', 'border-dark-600', 'rounded-2xl', 'my-auto');
+                btnMobile.classList.add('bg-dark-700', 'text-white');
+                btnDesktop.classList.remove('bg-dark-700', 'text-white');
+            } else {
+                container.style.maxWidth = 'none';
+                container.style.height = '100%';
+                container.classList.remove('border', 'border-dark-600', 'rounded-2xl', 'my-auto');
+                btnDesktop.classList.add('bg-dark-700', 'text-white');
+                btnMobile.classList.remove('bg-dark-700', 'text-white');
+            }
+        }
+
+        // Export Project as ZIP
+        async function exportProjectZip() {
+            if (!activeProject) return;
+            try {
+                const zip = new JSZip();
+                for (let filename of Object.keys(activeProject.files)) {
+                    const content = activeProject.files[filename];
+                    if (content.startsWith('data:')) {
+                        // Base64 binary asset
+                        const base64Data = content.split(',')[1];
+                        zip.file(filename, base64Data, { base64: true });
+                    } else {
+                        zip.file(filename, content);
+                    }
+                }
+
+                const content = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${activeProject.name || 'project'}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                alert('ZIP एक्सपोर्ट करने में त्रुटि: ' + err.message);
+            }
+        }
+
+        // Mobile Bottom Navigation Handler
+        function switchMobileTab(tab) {
+            const panelFiles = document.getElementById('panel-files');
+            const panelEditor = document.getElementById('panel-editor');
+            const panelPreview = document.getElementById('panel-preview');
+
+            const tabFiles = document.getElementById('mobTabFiles');
+            const tabEditor = document.getElementById('mobTabEditor');
+            const tabPreview = document.getElementById('mobTabPreview');
+
+            // Reset all
+            panelFiles.classList.add('hidden');
+            panelEditor.classList.add('hidden');
+            panelPreview.classList.add('hidden');
+            
+            tabFiles.className = 'flex flex-col items-center text-gray-400 space-y-0.5';
+            tabEditor.className = 'flex flex-col items-center text-gray-400 space-y-0.5';
+            tabPreview.className = 'flex flex-col items-center text-gray-400 space-y-0.5';
+
+            if (tab === 'files') {
+                panelFiles.classList.remove('hidden');
+                panelFiles.classList.add('flex', 'w-full');
+                tabFiles.className = 'flex flex-col items-center text-cyan-400 space-y-0.5';
+            } else if (tab === 'editor') {
+                panelEditor.classList.remove('hidden');
+                panelEditor.classList.add('flex', 'flex-1');
+                tabEditor.className = 'flex flex-col items-center text-cyan-400 space-y-0.5';
+            } else if (tab === 'preview') {
+                panelPreview.classList.remove('hidden');
+                panelPreview.classList.add('flex', 'flex-1');
+                tabPreview.className = 'flex flex-col items-center text-cyan-400 space-y-0.5';
+            }
+        }
+
+        // HTML Escape Helper
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
